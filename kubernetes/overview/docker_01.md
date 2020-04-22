@@ -1,4 +1,4 @@
-# 浅谈容器技术
+# 浅谈容器技术-01
 说到容器，我们就不自觉的会想到docker，那么docker是什么呢？我们看docker的log是一条驮着很多集装箱的鲸鱼，我们可以很直观的从这个log上获取到一些信息，鲸鱼背上的集装箱（也就是容器）中装的可能是一个应用，可能是一个linux的环境，也可能是一个配置好的mysql服务等，而鲸鱼就可以驮着它到任何一个港口（也就是机器），将这个集装箱卸下， 开箱即用里面的服务。而docker就是做这么一件事的，它可以将一个服务或一个应用打包成一个容器，可以将容器搬到在不同的平台上，开箱即用该容器中的服务。而容器其实就可以理解成一个沙盒。
 
 ## 容器的隔离技术
@@ -27,7 +27,7 @@ PID   USER     TIME  COMMAND
 $ ps aux | grep /bin/sh
 root     26750  0.0  0.0   1300   260 pts/0    Ss+  22:56   0:00 /bin/sh
 ```
-这时候你也许就会产生一个疑问，容器是如何做到隔离的呢？
+后面在容器中再次创建的进程就都是容器中1号进程的子进程了，所以容器是单进程模式的。这时候你也许就会产生一个疑问，容器是如何做到隔离的呢？
 
 说到隔离，我们就不得不说Cgroups技术和Namespace技术，简单的来说，Namespace技术隔离了“环境”，而Cgroups限制了“资源”。
 
@@ -37,4 +37,33 @@ root     26750  0.0  0.0   1300   260 pts/0    Ss+  22:56   0:00 /bin/sh
 
 说完了Namespace的“环境”隔离，我们下面来说一下Cgroups技术的“资源”限制。
 
-既然一台宿主机上可以起多个容器，那么对于容器中的一个运行中的进程来说，如果正在运行的过程中，他所需要的资源（如：CPU、Memory）让其他容器的进程抢夺完了，这显然是不合理，那么容器是如何做到资源隔离的呢？这就要说一下Linux的Cgroups技术了，它的主要作用就是限制一个进程组可以使用的资源的上限，如：CPU、Memory、磁盘等。
+既然一台宿主机上可以起多个容器，那么对于容器中的一个运行中的进程来说，如果正在运行的过程中，他所需要的资源（如：CPU、Memory）让其他容器的进程抢夺完了，这显然是不合理，那么容器是如何做到资源隔离的呢？这就要说一下Linux的Cgroups技术了，它的主要作用就是限制一个进程组可以使用的资源的上限，如：CPU、Memory、磁盘等。其实通过上面的描述，你也可以看出来，容器其实就是对单个进程的一种约束和管理的技术，既然容器都是使用一个OS，那么Linux的Cgroups技术完全就可以限制容器的资源使用量的上限。
+
+我们进入到容器的/sys/fs/cgroup目录中，你就会看到各个类型的资源限制的文件：
+
+```
+/sys/fs/cgroup # ls
+blkio             cpuacct           freezer           net_cls           perf_event
+cpu               cpuset            hugetlb           net_cls,net_prio  pids
+cpu,cpuacct       devices           memory            net_prio          systemd
+```
+我们以cpu举例，进入到cpu文件夹中，你会看到有很多文件，这些文件就是对进程使用CPU资源的限制，其中，我们查看cpu.cfs\_quota_us文件中的内容：
+
+```
+/sys/fs/cgroup/cpu,cpuacct # cat cpu.cfs_quota_us
+-1
+```
+
+-1就代表对CPU资源的使用量没有限制，那么也就是说这个容器中的进程理论上是可以吃满整台宿主机的CPU资源的，而cpu.cfs\_period_us文件中的内容就是在多长时间区间内，进程可以分配到这么多的CPU资源。我们可以通过docker run中的指令来控制它，我们重新启动一个容器，并限制它只能使用10%的CPU资源：
+
+```
+$ docker run -ti --rm --cpu-quota=10000 busybox /bin/sh
+```
+我们再次进入到容器中的/sys/fs/cgroup/cpu目录，查看cpu.cfs\_quota_us文件中的内容，就会发现已经限制了CPU的使用量
+
+```
+/sys/fs/cgroup/cpu,cpuacct # cat cpu.cfs_quota_us
+10000
+```
+
+同理，我们也可以通过docker run的--memory来限制memory的使用。那么容器中的这个cgroup的文件夹是哪里来的呢？我们可以到宿主机的/sys/fs/cgroup/cpu/docker/c07a010a8cdb06b44bd7df9f7目录中看一下就知道，这是宿主机使用联合挂载的方式挂载进去的。
