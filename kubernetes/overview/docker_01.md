@@ -1,4 +1,6 @@
 # 浅谈容器技术-01
+![](https://github.com/hanlaipeng/project-analysis/blob/master/img/docker.png)
+
 说到容器，我们就不自觉的会想到docker，那么docker是什么呢？我们看docker的log是一条驮着很多集装箱的鲸鱼，我们可以很直观的从这个log上获取到一些信息，鲸鱼背上的集装箱（也就是容器）中装的可能是一个应用，可能是一个linux的环境，也可能是一个配置好的mysql服务等，而鲸鱼就可以驮着它到任何一个港口（也就是机器），将这个集装箱卸下， 开箱即用里面的服务。而docker就是做这么一件事的，它可以将一个服务或一个应用打包成一个容器，可以将容器搬到在不同的平台上，开箱即用该容器中的服务。而容器其实就可以理解成一个沙盒。
 
 ## 容器的隔离技术
@@ -67,3 +69,5 @@ $ docker run -ti --rm --cpu-quota=10000 busybox /bin/sh
 ```
 
 同理，我们也可以通过docker run的--memory来限制memory的使用。那么容器中的这个cgroup的文件夹是哪里来的呢？我们可以到宿主机的/sys/fs/cgroup/cpu/docker/c07a010a8cdb06b44bd7df9f7目录中看一下就知道，这是宿主机使用联合挂载的方式挂载进去的。
+
+在了解了容器的隔离与限制之后，在下一部分，我们一起来看一下[容器的文件系统](./docker_02.md)吧。

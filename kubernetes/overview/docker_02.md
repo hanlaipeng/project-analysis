@@ -37,6 +37,8 @@ workdir=/var/lib/docker/overlay2/59f45e3f9d1034970d54701de694e24de070e3c80f2a4b7
 ```
 我们可以很清晰的看到容器的mount的信息，这个mount信息中也隐藏了容器的层级信息，如下图：
 
+![](https://github.com/hanlaipeng/project-analysis/blob/master/img/docker-layers.png)
+
 下面我们来分析一下这些mount的信息，一起揭露容器的层级信息：
 
 ### lowerdir：
@@ -123,6 +125,7 @@ merged：是联合挂载的时候，lowerdir和upperdir的合并结果，合并�
 ![](https://github.com/hanlaipeng/project-analysis/blob/master/img/docker-merge.png)
 
 `其中上层如果和下层重复，则上层覆盖下层的。但是，这里的覆盖不是替换，下面的层中的内容还是会存在的，所以这里就有了一个瘦身镜像的注意事项，你在构建镜像的时候，除了选择比较小的基础镜像，还一定要注意不要出现下层安装，上层删除的情况，这个不会出现1-1=0的情况，可以考虑使用阶段构建。`
+
 work：这个目录是一个空的目录，它主要是overlayFS在内部使用的一个目录。
 
 我们都说容器单独存在是没有意义的，只有容器的编排才有意义，那么下面我们就一起进入kubernetes项目中，先了解一下它的最小运行单元pod吧。
