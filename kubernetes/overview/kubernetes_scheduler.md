@@ -1,0 +1,4 @@
+# 浅谈调度器
+由于kubernetes的最小调度单元是pod，并且kubernetes是一个容器集群编排与管理的项目，那么当有pod申请创建的时候，kubernetes是如何将pod调度到“合适”的node节点上的呢，这就是kube-scheduler组件的主要工作了。
+
+
